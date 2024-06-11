@@ -289,6 +289,7 @@ def update(  # type: ignore
         ),
         config_file=config_file,
         config_dict=cfg_dict,
+        cli=True,
     )
     try:
         config_params.verify()
@@ -411,6 +412,7 @@ def apply(  # type: ignore
         ),
         config_file=config_file,
         config_dict=cfg_dict,
+        cli=True,
     )
     try:
         config_params.verify()
@@ -731,6 +733,7 @@ def create_deployment(
         ),
         config_file=config_file,
         config_dict=cfg_dict,
+        cli=True,
     )
     try:
         config_params.verify()
@@ -748,7 +751,7 @@ def create_deployment(
         spinner.log_progress.add_task(
             f"[bold green]Successfully created deployment '{deployment.name}' in cluster '{deployment.cluster}'[/bold green]"
         )
-        spinner.log_progress.add_task(
+        spinner.log_progress.print(
             f"[bold blue]To check the deployment details, go to:\n{deployment.admin_console}[/bold blue]"
         )
         if wait:
