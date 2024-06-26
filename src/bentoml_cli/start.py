@@ -235,6 +235,50 @@ def build_start_command() -> click.Group:
                 service_name=service_name,
             )
 
+    @cli.command(hidden=False)
+    @click.argument("bento", type=click.STRING, default=".")
+    @click.option(
+        "--service-name",
+        type=click.STRING,
+        required=False,
+        default="",
+        envvar="BENTOML_SERVE_SERVICE_NAME",
+        help="specify the runner name to serve",
+    )
+    @click.option(
+        "--working-dir",
+        type=click.Path(),
+        help="When loading from source code, specify the directory to find the Service instance",
+        default=None,
+        show_default=True,
+    )
+    # @add_experimental_docstring
+    def execute_hook(
+        bento: str,  # type: ignore (unused warning)
+        service_name: str,
+        working_dir: str | None,
+    ) -> None:
+        from _bentoml_sdk.service import Service
+        from bentoml._internal.service.loader import load
+
+        if working_dir is None:
+            if os.path.isdir(os.path.expanduser(bento)):
+                working_dir = os.path.expanduser(bento)
+            else:
+                working_dir = "."
+        if sys.path[0] != working_dir:
+            sys.path.insert(0, working_dir)
+
+        svc = load(bento, working_dir=working_dir)
+        if isinstance(svc, Service):
+            if service_name:
+                svc = svc.find_dependent(service_name)
+            from _bentoml_impl.server.serving import server_on_deployment
+
+            server_on_deployment(svc)
+        else:
+            raise ValueError("execute_hook is not supported for <1.2 bentos")
+
     @cli.command(hidden=True)
     @click.argument("bento", type=click.STRING, default=".")
     @click.option(
@@ -447,7 +491,6 @@ def build_start_command() -> click.Group:
                 working_dir = "."
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
-
         if bind is not None:
             parsed = urlparse(bind)
             assert parsed.scheme == "tcp"
